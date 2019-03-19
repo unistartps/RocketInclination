@@ -3,6 +3,7 @@
 import serial
 import struct
 import time
+import numpy as np
 
 typesDict = {'char': 'c', 'bool': '?',
              'int8': 'b', 'uint8': 'B',
@@ -142,4 +143,14 @@ if __name__ == '__main__':
                 print('\tTemperature (C°) {:0.2f}'.format(mpuTemp))
             else:
                 print('MPU6050 offline')
+
+            ax = (adxlAx + mpuAx) / 2
+            ay = (adxlAy + mpuAy) / 2
+            az = (adxlAz + mpuAz) / 2
+
+            thetaA = np.arctan2(az, ax) / np.pi * 180
+            phiA = np.arctan2(az, ay) / np.pi * 180
+
+            print(thetaA, phiA)
+
             print()
