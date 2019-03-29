@@ -22,7 +22,7 @@ testStruct test;
 rawStruct data;
 
 uint8_t nbMeasureCallibration;
-bool okCallibration;
+bool okCalibration;
 uint32_t waitTime;
 
 void setup() {
@@ -42,14 +42,14 @@ void setup() {
   // Calibration
   calibrate();
 
-  //Read the time between each measures
+  // Read the time between each measures
   readData(&waitTime, sizeof(waitTime));
 }
 
 void loop() {
   sendMeasures();
 
-  //Wait
+  // Wait
   delay(waitTime);
 }
 
@@ -63,14 +63,24 @@ void sendMeasures() {
     data.mpuTemp = accelgyro.getTemperature();
   }
 
-  //Send the raw data
+  // Send the raw data
   writeData(&data, sizeof(data));
 }
 
 void calibrate() {
-  readData(&nbMeasureCallibration, sizeof(nbMeasureCallibration));
-  readData(&okCallibration, sizeof(okCallibration));
-  if (okCallibration)
+  readData(&okCalibration, sizeof(okCalibration));
+  if (okCalibration) {
+    // Send data for gyroscope calibration
+    readData(&nbMeasureCallibration, sizeof(nbMeasureCallibration));
+    readData(&okCalibration, sizeof(okCalibration));
     for (int i = 0 ; i < nbMeasureCallibration ; i++)
       sendMeasures();
+
+    // Send data for accelerometers calibration
+    for (int i = 0 ; i < 3*2 : i++) {
+      readData(&okCalibration, sizeof(okCalibration));
+      for (int i = 0 ; i < nbMeasureCallibration ; i++)
+        sendMeasures();
+    }
+  }
 }

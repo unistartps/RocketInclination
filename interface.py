@@ -65,6 +65,9 @@ def apply_correction(data, offsets, scales):
 
 def calibrate(bser, nb_measure_calibration, run=False):
     """Give the offsets and scales for the data correction."""
+    # Tell the arduino if the calibration is done
+    bser.write(['bool'], [run])
+
     if run:
         # Initialization of offsets and scales corrections
         offsets = np.zeros(11)
@@ -73,29 +76,41 @@ def calibrate(bser, nb_measure_calibration, run=False):
         # Send the number of measures to do for each calibrations
         bser.write(['uint8'], [nb_measure_calibration])
 
-        # Wait for confirmation
+        # Wait for confirmation.
         input('Do not move')
-        # Send ok to the board to start sending measures to calibrate
+        # Send ok to the board to start sending measures to calibrate.
         bser.write(['bool'], [True])
 
-        # Read the measures and calibrate
+        # Calibrate gyroscope.
         for i in range(nb_measure_calibration):
+            # Receive and process data
             raw_data = bser.read(struct_format_measure)
             data = np.array(process_data(raw_data))
-            offsets[7:10] += data[7:10]\
+            # Calibrate
+            offsets[7:10] = offsets[7:10] + data[7:10]\
                 / nb_measure_calibration
 
         # Calibrate accelerometers.
-        # for i in range(1, 7):
-        #     upDown = [0] * 2
-        #     for j in range(2):
-        #         input('{:} {:}'.format(i, j))
-        #         bser.write(['bool'], [True])
-        #         for k in range(nb_measure_calibration):
-        #             raw_data = bser.read(struct_format_measure)
-        #             upDown[j] += process_data(raw_data)[i]\
-        #                 / nb_measure_calibration
-        #     offsets[i], scales[i] = calculate_offset_scale(*upDown)
+        xyz = {0: 'x', 1: 'y', 2: 'z'}
+        ud = {0: 'up', 1: 'down'}
+        for i in range(3):
+            upDown = np.zeros(4)
+            for j in range(2):
+                # Wait for confirmation
+                input('{} {}'.format(xyz[i], ud[j]))
+                # Send ok to the board to start sending measures to calibrate.
+                bser.write(['bool'], [True])
+
+                for k in range(nb_measure_calibration):
+                    # Receive and process data
+                    raw_data = bser.read(struct_format_measure)
+                    data = np.array(process_data(raw_data))
+                    # Calibrate
+                    upDown[j::2] = upDown[j::2] + data[i+1:i+5:3]\
+                        / nb_measure_calibration
+
+            offsets[i], scales[i] = calculate_offset_scale(*upDown[:2])
+            offsets[i+3], scales[i+3] = calculate_offset_scale(*upDown[2:])
     else:
         offsets = [0, -0.00043000000000004146, 0.05267500000000003,
                    -0.0006449999999998957, 0.04554443359374999,
