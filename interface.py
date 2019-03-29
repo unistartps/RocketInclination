@@ -7,6 +7,7 @@ Compute a sensor fusion.
 
 TODO:
 - Test calibration method.
+- use np.array?
 - Improve data fusion.
 - Documentation.
 - Implement other data fusion method.
@@ -69,7 +70,22 @@ def calibrate(bser, nb_measure_calibration, run=False):
         offsets = np.zeros(11)
         scales = np.ones(11)
 
-        bser.write(struct_format_calibration, [nb_measure_calibration])
+        # Send the number of measures to do for each calibrations
+        bser.write(['uint8'], [nb_measure_calibration])
+
+        # Wait for confirmation
+        input('Do not move')
+        # Send ok to the board to start sending measures to calibrate
+        bser.write(['bool'], [True])
+
+        # Read the measures and calibrate
+        for i in range(nb_measure_calibration):
+            raw_data = bser.read(struct_format_measure)
+            data = np.array(process_data(raw_data))
+            offsets[7:10] += data[7:10]\
+                / nb_measure_calibration
+
+        # Calibrate accelerometers.
         # for i in range(1, 7):
         #     upDown = [0] * 2
         #     for j in range(2):
@@ -80,11 +96,6 @@ def calibrate(bser, nb_measure_calibration, run=False):
         #             upDown[j] += process_data(raw_data)[i]\
         #                 / nb_measure_calibration
         #     offsets[i], scales[i] = calculate_offset_scale(*upDown)
-        for i in range(nb_measure_calibration):
-            bser.write(['bool'], [True])
-            raw_data = bser.read(struct_format_measure)
-            offsets[7:10] += process_data(raw_data)[7:10]\
-                / nb_measure_calibration
     else:
         offsets = [0, -0.00043000000000004146, 0.05267500000000003,
                    -0.0006449999999998957, 0.04554443359374999,
@@ -108,7 +119,6 @@ if __name__ == '__main__':
 
     # Define the format of the structure of data sent.
     struct_format_measure = ['uint32'] + ['int16'] * 10
-    struct_format_calibration = ['uint8']
 
     # Initialize connection with the arduino.
     bser = BinSerial(port_name, baud_rate)
@@ -118,7 +128,7 @@ if __name__ == '__main__':
 
     if test_adxl or test_mpu:
         # Calibrate
-        offsets, scales = calibrate(bser, nb_measure_calibration, False)
+        offsets, scales = calibrate(bser, nb_measure_calibration, True)
 
         # Send the wait time if at least one sensor is online.
         # If it is not sent the arduino do not start the measures.

@@ -40,7 +40,7 @@ void setup() {
   writeData(&test, sizeof(test));
 
   // Calibration
-  // calibrate();
+  calibrate();
 
   //Read the time between each measures
   readData(&waitTime, sizeof(waitTime));
