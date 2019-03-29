@@ -6,9 +6,9 @@ Calibrate and correct the measures.
 Compute a sensor fusion.
 
 TODO:
-- Finish Documentation.
 - Test calibration method.
 - Improve data fusion.
+- Documentation.
 - Implement other data fusion method.
 
 """
@@ -62,28 +62,38 @@ def apply_correction(data, offsets, scales):
         data[i] = (data[i] - offsets[i]) / scales[i]
 
 
-def calibrate(bser):
+def calibrate(bser, nb_measure_calibration, run=False):
     """Give the offsets and scales for the data correction."""
-    bser.write(struct_format_calibration, [nb_measure_calibration])
-    for i in range(7, 10):
-        if i < 7:
-            upDown = [0] * 2
-            for j in range(2):
-                input('{:} {:}'.format(i, j))
-                bser.write(['bool'], [True])
-                for k in range(nb_measure_calibration):
-                    raw_data = bser.read(struct_format_measure)
-                    upDown[j] += process_data(raw_data)[i]\
-                        / nb_measure_calibration
-            offsets[i], scales[i] = calculate_offset_scale(*upDown)
-        else:
-            for k in range(nb_measure_calibration):
-                bser.write(['bool'], [True])
-                raw_data = bser.read(struct_format_measure)
-                offsets[i] += process_data(raw_data)[i]\
-                    / nb_measure_calibration
+    if run:
+        # Initialization of offsets and scales corrections
+        offsets = np.zeros(11)
+        scales = np.ones(11)
 
-    print(offsets, scales)
+        bser.write(struct_format_calibration, [nb_measure_calibration])
+        # for i in range(1, 7):
+        #     upDown = [0] * 2
+        #     for j in range(2):
+        #         input('{:} {:}'.format(i, j))
+        #         bser.write(['bool'], [True])
+        #         for k in range(nb_measure_calibration):
+        #             raw_data = bser.read(struct_format_measure)
+        #             upDown[j] += process_data(raw_data)[i]\
+        #                 / nb_measure_calibration
+        #     offsets[i], scales[i] = calculate_offset_scale(*upDown)
+        for i in range(nb_measure_calibration):
+            bser.write(['bool'], [True])
+            raw_data = bser.read(struct_format_measure)
+            offsets[7:10] += process_data(raw_data)[7:10]\
+                / nb_measure_calibration
+    else:
+        offsets = [0, -0.00043000000000004146, 0.05267500000000003,
+                   -0.0006449999999998957, 0.04554443359374999,
+                   -0.01922607421875, 0.0020751953125, -1.3793893129770993,
+                   1.385496183206107, -2.483969465648855, 0]
+        scales = [1, 1.08962, 1.083815, 1.0730650000000002, 0.9987426757812501,
+                  1.01854248046875, 1.0287841796875, 1, 1, 1, 1]
+
+    return offsets, scales
 
 
 if __name__ == '__main__':
@@ -106,19 +116,9 @@ if __name__ == '__main__':
     # Read test connection of the sensor.
     test_adxl, test_mpu = bser.read(['bool'] * 2)
 
-    # Initialization of offsets and scales corrections
-    offsets = [0] * 11
-    scales = [1] * 11
-
     if test_adxl or test_mpu:
         # Calibrate
-        # calibration(bser)
-        offsets = [0, -0.00043000000000004146, 0.05267500000000003,
-                   -0.0006449999999998957, 0.04554443359374999,
-                   -0.01922607421875, 0.0020751953125, -1.3793893129770993,
-                   1.385496183206107, -2.483969465648855, 0]
-        scales = [1, 1.08962, 1.083815, 1.0730650000000002, 0.9987426757812501,
-                  1.01854248046875, 1.0287841796875, 1, 1, 1, 1]
+        offsets, scales = calibrate(bser, nb_measure_calibration, False)
 
         # Send the wait time if at least one sensor is online.
         # If it is not sent the arduino do not start the measures.
