@@ -20,6 +20,7 @@ __author__ = 'Jonathan Plasse'
 # To communicate with the arduino
 from binserial import BinSerial
 import numpy as np
+import yaml
 
 
 def process_data(raw_data):
@@ -123,31 +124,26 @@ def calibrate(bser, nb_measure_calibration, run=False):
 
 
 if __name__ == '__main__':
-    # Port name of the serial port
-    port_name = '/dev/ttyUSB0'
-    # Baud rate of the serial connection
-    baud_rate = 38400
-    # Wait time between each measures
-    wait_time = 1000
-    # Number of measures to take for calibration
-    nb_measure_calibration = 10
+    with open('config.yml', 'r') as f:
+        config = yaml.load(f.read())
 
     # Define the format of the structure of data sent.
     struct_format_measure = ['uint32'] + ['int16'] * 10
 
     # Initialize connection with the arduino.
-    bser = BinSerial(port_name, baud_rate)
+    bser = BinSerial(config['port_name'], config['baud_rate'])
 
     # Read test connection of the sensor.
     test_adxl, test_mpu = bser.read(['bool'] * 2)
 
     if test_adxl or test_mpu:
         # Calibrate
-        offsets, scales = calibrate(bser, nb_measure_calibration, True)
+        offsets, scales = calibrate(bser, config['nb_measure_calibration'],
+                                    config['do_calibration'])
 
         # Send the wait time if at least one sensor is online.
         # If it is not sent the arduino do not start the measures.
-        bser.write(['uint32'], [wait_time])
+        bser.write(['uint32'], [config['wait_time']])
 
     while test_adxl or test_mpu:
         # Read the raw data.
