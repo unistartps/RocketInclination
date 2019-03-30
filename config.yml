@@ -7,4 +7,4 @@ wait_time: 1000
 # Number of measures to take for calibration
 nb_measure_calibration: 10
 # Do calibration
-do_calibration: True
+do_calibration: False

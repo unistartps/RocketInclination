@@ -7,7 +7,6 @@ Compute a sensor fusion.
 
 TODO:
 - Test calibration method.
-- use np.array?
 - Improve data fusion.
 - Documentation.
 - Implement other data fusion method.
@@ -26,28 +25,23 @@ import yaml
 def process_data(raw_data):
     """Process raw_data into readable data."""
     # Assure raw_data is not modified.
-    data = raw_data.copy()
+    data = np.array(raw_data.copy(), dtype=float)
 
     # Time
     data[0] /= 1000
 
     # ADXL Acceleration
-    data[1] *= 0.0043
-    data[2] *= 0.0043
-    data[3] *= 0.0043
+    data[1:4] = data[1:4] * 0.0043
 
     # MPU Acceleration
-    data[4] /= 16384
-    data[5] /= 16384
-    data[6] /= 16384
+    data[4:7] = data[4:7] / 16384
 
     # MPU Speed Rotation
-    data[7] /= 131
-    data[8] /= 131
-    data[9] /= 131
+    data[7:10] = data[7:10] / 131
 
     # Temperature
-    data[10] = (data[10]+521)/340+35
+    data[10] = (data[10]+521)/340 + 35
+
     return data
 
 
@@ -86,7 +80,7 @@ def calibrate(bser, nb_measure_calibration, run=False):
         for i in range(nb_measure_calibration):
             # Receive and process data
             raw_data = bser.read(struct_format_measure)
-            data = np.array(process_data(raw_data))
+            data = process_data(raw_data)
             # Calibrate
             offsets[7:10] = offsets[7:10] + data[7:10]\
                 / nb_measure_calibration
@@ -105,7 +99,7 @@ def calibrate(bser, nb_measure_calibration, run=False):
                 for k in range(nb_measure_calibration):
                     # Receive and process data
                     raw_data = bser.read(struct_format_measure)
-                    data = np.array(process_data(raw_data))
+                    data = process_data(raw_data)
                     # Calibrate
                     upDown[j::2] = upDown[j::2] + data[i+1:i+5:3]\
                         / nb_measure_calibration
@@ -148,7 +142,6 @@ if __name__ == '__main__':
     while test_adxl or test_mpu:
         # Read the raw data.
         raw_data = bser.read(struct_format_measure)
-
         # Process the raw data into readable data.
         data = process_data(raw_data)
         # Apply data correction.
