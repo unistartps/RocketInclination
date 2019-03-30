@@ -106,6 +106,8 @@ def calibrate(bser, nb_measure_calibration, run=False):
 
             offsets[i], scales[i] = calculate_offset_scale(*upDown[:2])
             offsets[i+3], scales[i+3] = calculate_offset_scale(*upDown[2:])
+        with open('calibration.yml', 'w') as f:
+            f.write(yaml.dump({offsets: list(offsets), scales: list(scales)}))
     else:
         offsets = [0, -0.00043000000000004146, 0.05267500000000003,
                    -0.0006449999999998957, 0.04554443359374999,
