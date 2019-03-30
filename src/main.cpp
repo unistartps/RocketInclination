@@ -77,9 +77,9 @@ void calibrate() {
       sendMeasures();
 
     // Send data for accelerometers calibration
-    for (int i = 0 ; i < 3*2 : i++) {
+    for (int i = 0 ; i < 3*2 ; i++) {
       readData(&okCalibration, sizeof(okCalibration));
-      for (int i = 0 ; i < nbMeasureCallibration ; i++)
+      for (int j = 0 ; j < nbMeasureCallibration ; j++)
         sendMeasures();
     }
   }
