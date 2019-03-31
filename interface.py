@@ -106,15 +106,9 @@ def calibrate(bser, nb_measure_calibration, run=False):
 
             offsets[i], scales[i] = calculate_offset_scale(*upDown[:2])
             offsets[i+3], scales[i+3] = calculate_offset_scale(*upDown[2:])
-        with open('calibration.yml', 'w') as f:
-            f.write(yaml.dump({offsets: list(offsets), scales: list(scales)}))
+        np.savetxt('calibration.csv', [offsets, scales])
     else:
-        offsets = [0, -0.00043000000000004146, 0.05267500000000003,
-                   -0.0006449999999998957, 0.04554443359374999,
-                   -0.01922607421875, 0.0020751953125, -1.3793893129770993,
-                   1.385496183206107, -2.483969465648855, 0]
-        scales = [1, 1.08962, 1.083815, 1.0730650000000002, 0.9987426757812501,
-                  1.01854248046875, 1.0287841796875, 1, 1, 1, 1]
+        offsets, scales = np.loadtxt('calibration.csv')
 
     return offsets, scales
 
