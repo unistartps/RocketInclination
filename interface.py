@@ -104,10 +104,14 @@ def calibrate(bser, nb_measure_calibration, run=False):
                     upDown[j::2] = upDown[j::2] + data[i+1:i+5:3]\
                         / nb_measure_calibration
 
+            # Calculate offset and scale
             offsets[i], scales[i] = calculate_offset_scale(*upDown[:2])
             offsets[i+3], scales[i+3] = calculate_offset_scale(*upDown[2:])
+
+        # Save offsets and scales to configuration.csv
         np.savetxt('calibration.csv', [offsets, scales])
     else:
+        # Load offsets and scales from configuration.csv
         offsets, scales = np.loadtxt('calibration.csv')
 
     return offsets, scales
