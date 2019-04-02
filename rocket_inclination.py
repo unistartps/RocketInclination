@@ -115,6 +115,47 @@ def calibrate(bser, nb_measure_calibration, run=False):
     return offsets, scales
 
 
+def calculate_inclination(data, test_adxl, test_mpu, theta, phi):
+    """Calculate the inclination from the sensor available"""
+    timestamp, adxl_ax, adxl_ay, adxl_az, mpu_ax, mpu_ay, mpu_az, mpu_gx,\
+        mpu_gy, mpu_gz, mpu_temp = data
+
+    if test_adxl and test_mpu:
+        # Average the accelerations of the sensors
+        ax = (adxl_ax + mpu_ax) / 2
+        ay = (adxl_ay + mpu_ay) / 2
+        az = (adxl_az + mpu_az) / 2
+
+        # Inclination calculated from the accelerometers
+        thetaA = np.arctan2(az, ax) * 180 / np.pi
+        phiA = np.arctan2(az, ay) * 180 / np.pi
+
+        # Inclination of the gyroscope
+        thetaG = mpu_gy
+        phiG = mpu_gx
+
+        # Inclination calculated from the sensor fusion
+        theta = alpha*theta + (1-alpha)*thetaA\
+            + alpha*config['wait_time']/1000*thetaG
+        phi = alpha*phi + (1-alpha)*phiA\
+            + alpha*config['wait_time']/1000*phiG
+
+    elif test_adxl:
+        # Inclination calculated from the accelerometers
+        thetaA = np.arctan2(az, ax) * 180 / np.pi
+        phiA = np.arctan2(az, ay) * 180 / np.pi
+
+        return thetaA, phiA
+
+    elif test_mpu:
+        pass
+
+    else:
+        pass
+
+    return theta, phi
+
+
 if __name__ == '__main__':
     with open('config.yml', 'r') as f:
         config = yaml.load(f.read())
@@ -156,24 +197,8 @@ if __name__ == '__main__':
             mpu_gy, mpu_gz, mpu_temp = data
 
         # Sensor Fusion
-        # Average the accelerations of the sensors
-        ax = (adxl_ax + mpu_ax) / 2
-        ay = (adxl_ay + mpu_ay) / 2
-        az = (adxl_az + mpu_az) / 2
-
-        # Inclination of the gyroscope
-        thetaG = mpu_gy
-        phiG = mpu_gx
-
-        # Inclination calculated from the accelerometers
-        thetaA = np.arctan2(az, ax) * 180 / np.pi
-        phiA = np.arctan2(az, ay) * 180 / np.pi
-
-        # Inclination calculated from the sensor fusion
-        theta = alpha*theta + (1-alpha)*thetaA\
-            + alpha*config['wait_time']/1000*thetaG
-        phi = alpha*phi + (1-alpha)*phiA\
-            + alpha*config['wait_time']/1000*phiG
+        theta, phi = calculate_inclination(data, test_adxl, test_mpu,
+                                           theta, phi)
 
         # Display the data.
         print('Timestamp (s)', timestamp)
@@ -197,6 +222,9 @@ if __name__ == '__main__':
             print('MPU6050 offline')
 
         print('Inclination')
-        print(f'\tTheta: {theta:0.2f}, Phi: {phi:0.2f}')
+        if test_adxl and test_mpu:
+            print(f'\tTheta: {theta:0.2f}, Phi: {phi:0.2f}')
+        elif test_adxl:
+            print(f'\tTheta: {theta:0.2f}, Phi: {phi:0.2f}')
 
         print()
