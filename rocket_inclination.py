@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""interface get sensor data from the experiment board.
+"""rocket_inclination get sensor data from the experiment board.
 Calibrate and correct the measures.
-Compute a sensor fusion.
+Calculate the inclination of the rocket thanks to a sensor fusion.
 
 TODO:
-- Improve data fusion.
-- Documentation.
 - Implement other data fusion method.
 - Add constant verification of sensors state (offline/online)
 
