@@ -1,11 +1,11 @@
 # Port name of the serial port
 port_name: '/dev/ttyUSB0'
 # Baud rate of the serial connection
-baud_rate: 38400
+baud_rate: 115200
 # Wait time between each measures in milliseconds
 wait_time: 10
 # Time constant of the sensor fusion in seconds
-time_constant: 0.19
+time_constant: 0.05
 # Number of measures to take for calibration
 nb_measure_calibration: 10
 # Do calibration

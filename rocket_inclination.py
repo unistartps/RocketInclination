@@ -120,7 +120,23 @@ def calculate_inclination(data, test_adxl, test_mpu, theta, phi):
     timestamp, adxl_ax, adxl_ay, adxl_az, mpu_ax, mpu_ay, mpu_az, mpu_gx,\
         mpu_gy, mpu_gz, mpu_temp = data
 
-    if test_adxl and test_mpu:
+    if not test_adxl and not test_mpu:
+        # Inable to calculate inclination, all sensors are offline
+        return None, None
+
+    elif test_adxl and not test_mpu:
+        # Inclination calculated from the ADXL accelerometer
+        thetaA = np.arctan2(adxl_az, adxl_ax) * 180 / np.pi
+        phiA = np.arctan2(adxl_az, adxl_ay) * 180 / np.pi
+
+        return thetaA, phiA
+
+    elif not test_adxl and test_mpu:
+        # Inclination calculated from the MPU accelerometer
+        thetaA = np.arctan2(mpu_az, mpu_ax) * 180 / np.pi
+        phiA = np.arctan2(mpu_az, mpu_ay) * 180 / np.pi
+
+    else:
         # Average the accelerations of the sensors
         ax = (adxl_ax + mpu_ax) / 2
         ay = (adxl_ay + mpu_ay) / 2
@@ -130,28 +146,15 @@ def calculate_inclination(data, test_adxl, test_mpu, theta, phi):
         thetaA = np.arctan2(az, ax) * 180 / np.pi
         phiA = np.arctan2(az, ay) * 180 / np.pi
 
-        # Inclination of the gyroscope
-        thetaG = mpu_gy
-        phiG = mpu_gx
+    # Inclination of the gyroscope
+    d_thetaG = mpu_gy
+    d_phiG = mpu_gx
 
-        # Inclination calculated from the sensor fusion
-        theta = alpha*theta + (1-alpha)*thetaA\
-            + alpha*config['wait_time']/1000*thetaG
-        phi = alpha*phi + (1-alpha)*phiA\
-            + alpha*config['wait_time']/1000*phiG
-
-    elif test_adxl:
-        # Inclination calculated from the accelerometers
-        thetaA = np.arctan2(az, ax) * 180 / np.pi
-        phiA = np.arctan2(az, ay) * 180 / np.pi
-
-        return thetaA, phiA
-
-    elif test_mpu:
-        pass
-
-    else:
-        pass
+    # Inclination calculated from the sensor fusion
+    theta = alpha*theta + (1-alpha)*thetaA\
+        + alpha*config['wait_time']/1000*d_thetaG
+    phi = alpha*phi + (1-alpha)*phiA\
+        + alpha*config['wait_time']/1000*d_phiG
 
     return theta, phi
 
@@ -222,9 +225,12 @@ if __name__ == '__main__':
             print('MPU6050 offline')
 
         print('Inclination')
-        if test_adxl and test_mpu:
+        if test_adxl or test_mpu:
+
             print(f'\tTheta: {theta:0.2f}, Phi: {phi:0.2f}')
-        elif test_adxl:
-            print(f'\tTheta: {theta:0.2f}, Phi: {phi:0.2f}')
+        else:
+            print('\tInable to calculate inclination')
 
         print()
+    print('All are sensor offline')
+    print('Stop program')

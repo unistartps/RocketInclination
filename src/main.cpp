@@ -28,7 +28,7 @@ uint32_t waitTime;
 void setup() {
   // Initialization
   Wire.begin();
-  Serial.begin(38400);
+  Serial.begin(115200);
   accel.initialize();
   accelgyro.initialize();
 
