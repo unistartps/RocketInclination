@@ -185,8 +185,8 @@ if __name__ == '__main__':
         alpha = config['time_constant']\
             / (config['time_constant'] + config['wait_time']/1000)
         # Angle of inclination of the board
-        theta = 0
-        phi = 0
+        theta = 90
+        phi = 90
 
     while test_adxl or test_mpu:
         # Read the raw data.
