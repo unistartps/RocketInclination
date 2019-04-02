@@ -139,8 +139,10 @@ if __name__ == '__main__':
         # If it is not sent the arduino do not start the measures.
         bser.write(['uint32'], [config['wait_time']])
 
+        # Coefficient the sensor fusion
         alpha = config['time_constant']\
             / (config['time_constant'] + config['wait_time']/1000)
+        # Angle of inclination of the board
         theta = 0
         phi = 0
 
@@ -155,43 +157,48 @@ if __name__ == '__main__':
         timestamp, adxl_ax, adxl_ay, adxl_az, mpu_ax, mpu_ay, mpu_az, mpu_gx,\
             mpu_gy, mpu_gz, mpu_temp = data
 
+        # Sensor Fusion
+        # Average the accelerations of the sensors
+        ax = (adxl_ax + mpu_ax) / 2
+        ay = (adxl_ay + mpu_ay) / 2
+        az = (adxl_az + mpu_az) / 2
+
+        # Inclination of the gyroscope
+        thetaG = mpu_gy
+        phiG = mpu_gx
+
+        # Inclination calculated from the accelerometers
+        thetaA = np.arctan2(az, ax) * 180 / np.pi
+        phiA = np.arctan2(az, ay) * 180 / np.pi
+
+        # Inclination calculated from the sensor fusion
+        theta = alpha*theta + (1-alpha)*thetaA\
+            + alpha*config['wait_time']/1000*thetaG
+        phi = alpha*phi + (1-alpha)*phiA\
+            + alpha*config['wait_time']/1000*phiG
+
         # Display the data.
         print('Timestamp (s)', timestamp)
 
         if test_adxl:
             print('ADXL345 online')
-            print('\tAcceleration (g) x:{:0.2f}, y:{:0.2f}, z:{:0.2f}'.format(
-                adxl_ax, adxl_ay, adxl_az))
+            print('\tAcceleration (g)')
+            print(f'\t\tx:{adxl_ax:0.2f}, y:{adxl_ay:0.2f}, z:{adxl_az:0.2f}')
         else:
             print('ADXL345 offline')
 
         if test_mpu:
             print('MPU6050 online')
-            print('\tAcceleration (g) x:{:0.2f}, y:{:0.2f}, z:{:0.2f}'.format(
-                mpu_ax, mpu_ay, mpu_az))
-            print('\tRotation (°/s) x:{:0.2f}, y:{:0.2f}, z:{:0.2f}'.format(
-                mpu_gx, mpu_gy, mpu_gz))
-            print('\tTemperature (C°) {:0.2f}'.format(mpu_temp))
+            print('\tAcceleration (g)')
+            print(f'\t\tx:{mpu_ax:0.2f}, y:{mpu_ay:0.2f}, z:{mpu_az:0.2f}')
+            print('\tRotation (°/s)')
+            print(f'\t\tx:{mpu_gx:0.2f}, y:{mpu_gy:0.2f},z:{mpu_gz:0.2f}')
+            print('\tTemperature (C°)')
+            print(f'\t\t{mpu_temp:0.2f}')
         else:
             print('MPU6050 offline')
 
-        # Sensor Fusion
-        ax = (adxl_ax + mpu_ax) / 2
-        ay = (adxl_ay + mpu_ay) / 2
-        az = (adxl_az + mpu_az) / 2
-
-        thetaG = mpu_gy
-        phiG = mpu_gx
-
-        thetaA = np.arctan2(az, ax) * 180 / np.pi
-        phiA = np.arctan2(az, ay) * 180 / np.pi
-
-        theta = alpha*theta + (1-alpha)*thetaA\
-            + alpha*config['wait_time']/1000*thetaG
-
-        phi = alpha*phi + (1-alpha)*phiA\
-            + alpha*config['wait_time']/1000*phiG
-
-        print(f'Theta: {theta}, Phi: {phi}')
+        print('Inclination')
+        print(f'\tTheta: {theta:0.2f}, Phi: {phi:0.2f}')
 
         print()
