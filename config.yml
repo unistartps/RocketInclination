@@ -4,8 +4,8 @@ port_name: '/dev/ttyUSB0'
 baud_rate: 115200
 # Wait time between each measures in milliseconds
 wait_time: 10
-# Time constant of the sensor fusion in seconds
-time_constant: 0.05
+# Time constant of the complementary filter in seconds
+time_constant: 0.19
 # Number of measures to take for calibration
 nb_measure_calibration: 10
 # Do calibration
