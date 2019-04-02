@@ -11,7 +11,7 @@ TODO:
 
 """
 
-__version__ = '0.1'
+__version__ = '1.0'
 __author__ = 'Jonathan Plasse'
 
 # To communicate with the arduino
