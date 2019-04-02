@@ -6,10 +6,10 @@ Calibrate and correct the measures.
 Compute a sensor fusion.
 
 TODO:
-- Test calibration method.
 - Improve data fusion.
 - Documentation.
 - Implement other data fusion method.
+- Add constant verification of sensors state (offline/online)
 
 """
 
@@ -139,6 +139,11 @@ if __name__ == '__main__':
         # If it is not sent the arduino do not start the measures.
         bser.write(['uint32'], [config['wait_time']])
 
+        alpha = config['time_constant']\
+            / (config['time_constant'] + config['wait_time']/1000)
+        theta = 0
+        phi = 0
+
     while test_adxl or test_mpu:
         # Read the raw data.
         raw_data = bser.read(struct_format_measure)
@@ -164,7 +169,7 @@ if __name__ == '__main__':
             print('MPU6050 online')
             print('\tAcceleration (g) x:{:0.2f}, y:{:0.2f}, z:{:0.2f}'.format(
                 mpu_ax, mpu_ay, mpu_az))
-            print('\tRotation (w/s) x:{:0.2f}, y:{:0.2f}, z:{:0.2f}'.format(
+            print('\tRotation (°/s) x:{:0.2f}, y:{:0.2f}, z:{:0.2f}'.format(
                 mpu_gx, mpu_gy, mpu_gz))
             print('\tTemperature (C°) {:0.2f}'.format(mpu_temp))
         else:
@@ -175,9 +180,18 @@ if __name__ == '__main__':
         ay = (adxl_ay + mpu_ay) / 2
         az = (adxl_az + mpu_az) / 2
 
-        thetaA = np.arctan2(az, ax) / np.pi * 180
-        phiA = np.arctan2(az, ay) / np.pi * 180
+        thetaG = mpu_gy
+        phiG = mpu_gx
 
-        print(thetaA, phiA)
+        thetaA = np.arctan2(az, ax) * 180 / np.pi
+        phiA = np.arctan2(az, ay) * 180 / np.pi
+
+        theta = alpha*theta + (1-alpha)*thetaA\
+            + alpha*config['wait_time']/1000*thetaG
+
+        phi = alpha*phi + (1-alpha)*phiA\
+            + alpha*config['wait_time']/1000*phiG
+
+        print(f'Theta: {theta}, Phi: {phi}')
 
         print()
